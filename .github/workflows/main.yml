@@ -1,0 +1,37 @@
+name: Build SoakingWetFO4
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        shell: pwsh
+        run: cmake --build build --config Release
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path package/Data/F4SE/Plugins | Out-Null
+          Copy-Item build/Release/SoakingWetFO4.dll package/Data/F4SE/Plugins/
+          if (Test-Path config/SoakingWetFO4.ini) {
+            Copy-Item config/SoakingWetFO4.ini package/Data/F4SE/Plugins/
+          }
+          Compress-Archive -Path package/* -DestinationPath SoakingWetFO4-OG-1.10.163.zip -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SoakingWetFO4-OG-1.10.163
+          path: SoakingWetFO4-OG-1.10.163.zip
